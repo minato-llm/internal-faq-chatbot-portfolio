@@ -1,0 +1,66 @@
+# Python仮想環境
+venv/
+env/
+ENV/
+.venv/
+
+# Python生成ファイル
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 環境変数ファイル
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# ログファイル
+*.log
+logs/
+
+# キャッシュディレクトリ
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+
+# IDEとエディタの設定
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# AWS関連
+.aws/
+aws-credentials.json
+
+# その他
+.directory
+node_modules/ 
