@@ -42,12 +42,12 @@ async def chat_endpoint(request: Request):
         lambda_response_preprocess = await call_lambda_function(TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME, {"message": user_message})
         processed_message = lambda_response_preprocess.get("processed_message")
         
-        # テスト後は以下のコメントを外してRAGフローを実装
-        """
         # AWS Lambda (ベクトル化) 関数を呼び出す
         lambda_response_vectorize = await call_lambda_function(BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
         query_vector = lambda_response_vectorize.get("query_vector")
 
+        # テスト後は以下のコメントを外してRAGフローを実装
+        """
         # AWS Lambda (Kendra検索) 関数を呼び出す
         lambda_response_kendra = await call_lambda_function(KENDRA_SEARCH_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
         related_documents = lambda_response_kendra.get("related_documents", [])
@@ -63,7 +63,7 @@ async def chat_endpoint(request: Request):
         """
         
         # テスト段階ではダミー応答を返す
-        final_response = {"response": f"前処理Lambdaからの応答 (前処理後メッセージ): {processed_message}"}
+        final_response = {"response": f"ベクトル化Lambdaからの応答 (ベクトル): {query_vector}"}
         return JSONResponse(final_response)
 
     except json.JSONDecodeError:
