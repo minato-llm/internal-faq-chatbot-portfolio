@@ -27,8 +27,8 @@ def split_text(text, chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP):
 def create_response(status_code, body):
     """Lambda関数のレスポンスを生成する"""
     return {
-        'statusCode': status_code,
-        'body': json.dumps(body)  # 元のJSONシリアライズ方法を維持
+        "statusCode": status_code,
+        "body": json.dumps(body)  # 元のJSONシリアライズ方法を維持
     }
 
 @logger.inject_lambda_context(log_event=True)
@@ -39,7 +39,7 @@ def lambda_handler(event, context):
         message = event.get("message")
         if not message:
             logger.warning("メッセージが送信されていません")
-            return create_response(400, {'error': 'メッセージが送信されていません'})
+            return create_response(400, {"error": "メッセージが送信されていません"})
 
         logger.info(f"受信メッセージ長: {len(message)}文字")            
         # テキスト分割処理
@@ -47,15 +47,15 @@ def lambda_handler(event, context):
         
         if not chunks:
             logger.warning("テキスト分割後のチャンクがありません")
-            return create_response(200, {'processed_message': ""})
+            return create_response(200, {"processed_message": ""})
             
         logger.info(f"分割後のチャンク数: {len(chunks)}")        
         # 元のコードと同じく、最初のチャンクのみを返す
-        return create_response(200, {'processed_message': chunks[0]})
+        return create_response(200, {"processed_message": chunks[0]})
 
     except Exception as e:
         logger.exception(f"テキスト処理中にエラーが発生しました: {e}")
         return create_response(500, {
-            'error': 'サーバーエラーが発生しました', 
-            'details': str(e)
+            "error": "サーバーエラーが発生しました", 
+            "details": str(e)
         })

@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # AWS Lambdaクライアントの初期化 (リージョンは環境に合わせて変更)
-lambda_client = boto3.client('lambda', region_name='ap-northeast-1')
-TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME = 'lambda-preprocessor-lambda'
-BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME = 'bedrock-vector-lambda'
-KENDRA_SEARCH_LAMBDA_FUNCTION_NAME = 'kendra-search-lambda'
+lambda_client = boto3.client("lambda", region_name="ap-northeast-1")
+TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME = "lambda-preprocessor-lambda"
+BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME = "bedrock-vector-lambda"
+KENDRA_SEARCH_LAMBDA_FUNCTION_NAME = "kendra-search-lambda"
 
 # LangChain Bedrock LLMの初期化
 bedrock_llm = ChatBedrock(
@@ -38,7 +38,7 @@ async def chat_endpoint(request: Request):
             return JSONResponse({"error": "メッセージが送信されていません"}, status_code=400)
         
         logger.info("LLMの回答生成を開始します")
-        # テスト段階では前処理Lambda関数のみ呼び出す
+        # AWS Lambda (前処理) 関数を呼び出す
         lambda_response_preprocess = await call_lambda_function(TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME, {"message": user_message})
         processed_message = lambda_response_preprocess.get("processed_message")
         
@@ -46,12 +46,11 @@ async def chat_endpoint(request: Request):
         lambda_response_vectorize = await call_lambda_function(BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
         query_vector = lambda_response_vectorize.get("query_vector")
 
-        # テスト後は以下のコメントを外してRAGフローを実装
-        """
         # AWS Lambda (Kendra検索) 関数を呼び出す
         lambda_response_kendra = await call_lambda_function(KENDRA_SEARCH_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
         related_documents = lambda_response_kendra.get("related_documents", [])
-
+        """
+         テスト後は以下のコメントを外してRAGフローを実装
         # RAGプロンプトを作成
         rag_prompt = create_rag_prompt(processed_message, related_documents)
 
@@ -63,7 +62,7 @@ async def chat_endpoint(request: Request):
         """
         
         # テスト段階ではダミー応答を返す
-        final_response = {"response": f"ベクトル化Lambdaからの応答 (ベクトル): {query_vector}"}
+        final_response = {"response": f"Kendra検索Lambdaからの応答 (関連ドキュメント): {related_documents}"}
         return JSONResponse(final_response)
 
     except json.JSONDecodeError:
@@ -86,7 +85,7 @@ async def call_lambda_function(function_name: str, payload: dict):
             None,
             lambda: lambda_client.invoke(
                 FunctionName=function_name,
-                InvocationType='RequestResponse',
+                InvocationType="RequestResponse",
                 Payload=json.dumps(payload)
             )
         )
@@ -94,17 +93,17 @@ async def call_lambda_function(function_name: str, payload: dict):
         # レスポンスのペイロードをバイトに変換
         payload_bytes = await loop.run_in_executor(
             None,
-            lambda: response['Payload'].read()
+            lambda: response["Payload"].read()
         )
         
         # バイトを文字列に変換
-        payload_str = payload_bytes.decode('utf-8')    
+        payload_str = payload_bytes.decode("utf-8")    
         # 文字列をJSONに変換
         payload_json = json.loads(payload_str)
         
-        if response['StatusCode'] == 200:
+        if response["StatusCode"] == 200:
             logger.info(f"Lambda関数 '{function_name}' の呼び出しが成功しました")
-            return json.loads(payload_json['body'])
+            return json.loads(payload_json["body"])
         else:
             logger.error(f"Lambda関数エラー: {payload_json}")
             return {"error": "Lambda関数の実行に失敗しました", "details": payload_json}

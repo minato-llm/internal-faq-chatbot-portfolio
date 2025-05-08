@@ -10,8 +10,8 @@ user_message = st.text_input("質問を入力してください")
 if st.button("送信"):
     if user_message:
         api_url = "http://localhost:8000/chat" # FastAPIアプリケーションのURL
-        headers = {'Content-Type': 'application/json'}
-        data = {'message': user_message}
+        headers = {"Content-Type": "application/json"}
+        data = {"message": user_message}
 
         try:
             # リクエストを送信
