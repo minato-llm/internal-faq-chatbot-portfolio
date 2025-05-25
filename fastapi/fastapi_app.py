@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# AWS Lambdaクライアントの初期化 (リージョンは環境に合わせて変更)
+# AWS Lambdaクライアントの初期化
 lambda_client = boto3.client("lambda", region_name="ap-northeast-1")
 TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME = "lambda-preprocessor-lambda"
 BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME = "bedrock-vector-lambda"
@@ -22,10 +22,10 @@ KENDRA_SEARCH_LAMBDA_FUNCTION_NAME = "kendra-search-lambda"
 
 # LangChain Bedrock LLMの初期化
 bedrock_llm = ChatBedrock(
-    model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
-    region_name="ap-northeast-1"
+    model_id="arn:aws:bedrock:ap-northeast-1:545009855730:inference-profile/apac.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    region_name="ap-northeast-1",
+    provider="anthropic"
 )
-
 
 @app.post("/chat")
 async def chat_endpoint(request: Request):
@@ -41,7 +41,7 @@ async def chat_endpoint(request: Request):
         # AWS Lambda (前処理) 関数を呼び出す
         lambda_response_preprocess = await call_lambda_function(TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME, {"message": user_message})
         processed_message = lambda_response_preprocess.get("processed_message")
-        
+      
         # AWS Lambda (ベクトル化) 関数を呼び出す
         lambda_response_vectorize = await call_lambda_function(BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
         query_vector = lambda_response_vectorize.get("query_vector")
@@ -49,20 +49,22 @@ async def chat_endpoint(request: Request):
         # AWS Lambda (Kendra検索) 関数を呼び出す
         lambda_response_kendra = await call_lambda_function(KENDRA_SEARCH_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
         related_documents = lambda_response_kendra.get("related_documents", [])
-        """
-         テスト後は以下のコメントを外してRAGフローを実装
+        
         # RAGプロンプトを作成
-        rag_prompt = create_rag_prompt(processed_message, related_documents)
+        context_texts = []
+        for doc in related_documents:
+            content = doc.get("content", "")
+            context_texts.append(content)
+        rag_prompt = create_rag_prompt(processed_message, context_texts)
 
         # LangChain Bedrock LLMで回答生成
         messages = [HumanMessage(content=rag_prompt)]
         ai_response = bedrock_llm.invoke(messages)
         response_text = ai_response.content
         logger.info("LLMからの回答生成が完了しました")
-        """
-        
-        # テスト段階ではダミー応答を返す
-        final_response = {"response": f"Kendra検索Lambdaからの応答 (関連ドキュメント): {related_documents}"}
+
+        # 生成した回答を返却
+        final_response = {"response": response_text}
         return JSONResponse(final_response)
 
     except json.JSONDecodeError:

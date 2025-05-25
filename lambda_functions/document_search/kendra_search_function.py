@@ -68,7 +68,7 @@ def lambda_handler(event, context):
                 "content": doc.page_content,
                 "metadata": doc.metadata
             })
-        
+
         logger.info(f"検索結果件数: {len(document_contents)}件")       
         # ドキュメント検索で取得した関連ドキュメントの内容とメタデータを返却
         return {
