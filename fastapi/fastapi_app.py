@@ -7,6 +7,7 @@ import asyncio
 from langchain_aws import ChatBedrock
 from langchain_core.messages import HumanMessage
 import logging
+import os
 
 # ロガー設定
 logging.basicConfig(level=logging.INFO)
@@ -14,16 +15,20 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+# 環境変数からAWS設定を読み込む
+AWS_REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
+BEDROCK_MODEL_ARN = os.environ.get("BEDROCK_MODEL_ARN", "")  # デフォルト値は空文字列
+
 # AWS Lambdaクライアントの初期化
-lambda_client = boto3.client("lambda", region_name="ap-northeast-1")
-TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME = "lambda-preprocessor-lambda"
-BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME = "bedrock-vector-lambda"
-KENDRA_SEARCH_LAMBDA_FUNCTION_NAME = "kendra-search-lambda"
+lambda_client = boto3.client("lambda", region_name=AWS_REGION)
+TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME = os.environ.get("TEXT_PREPROCESSOR_LAMBDA", "lambda-preprocessor-lambda")
+BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME = os.environ.get("BEDROCK_VECTOR_LAMBDA", "bedrock-vector-lambda")
+KENDRA_SEARCH_LAMBDA_FUNCTION_NAME = os.environ.get("KENDRA_SEARCH_LAMBDA", "kendra-search-lambda")
 
 # LangChain Bedrock LLMの初期化
 bedrock_llm = ChatBedrock(
-    model_id="arn:aws:bedrock:ap-northeast-1:545009855730:inference-profile/apac.anthropic.claude-3-5-sonnet-20241022-v2:0",
-    region_name="ap-northeast-1",
+    model_id=BEDROCK_MODEL_ARN,
+    region_name=AWS_REGION,
     provider="anthropic"
 )
 
@@ -31,8 +36,11 @@ bedrock_llm = ChatBedrock(
 async def chat_endpoint(request: Request):
     """社内FAQチャットボットのエンドポイント"""
     try:
+
         request_body = await request.json()
         user_message = request_body.get("message")
+        session_id = request_body.get("session_id")
+        messages_history = request_body.get("messages_history", [])
 
         if not user_message:
             return JSONResponse({"error": "メッセージが送信されていません"}, status_code=400)
@@ -50,12 +58,33 @@ async def chat_endpoint(request: Request):
         lambda_response_kendra = await call_lambda_function(KENDRA_SEARCH_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
         related_documents = lambda_response_kendra.get("related_documents", [])
         
-        # RAGプロンプトを作成
+        # 関連ドキュメントの情報を抽出
+        document_info = []
         context_texts = []
-        for doc in related_documents:
-            content = doc.get("content", "")
-            context_texts.append(content)
-        rag_prompt = create_rag_prompt(processed_message, context_texts)
+        unique_titles = set()
+
+        # 関連ドキュメントが存在する場合、各ドキュメントからタイトルを抽出し、
+        # RAG用のコンテキストとして内容を保存
+        if related_documents:
+            for doc in related_documents:
+                content = doc.get("content", "")
+                metadata = doc.get("metadata", {})
+                
+                # メタデータから必要な情報を抽出
+                title = metadata.get("title", "不明なドキュメント")
+                
+                # 一意のドキュメントタイトルのみをUI表示用に追加
+                if title not in unique_titles:
+                    unique_titles.add(title)
+                    # ドキュメントタイトル情報を保存
+                    document_info.append({
+                        "title": title,
+                    })              
+                # RAG用にコンテキストを追加
+                context_texts.append(content)
+            
+        # 会話履歴を含むRAGプロンプトを作成
+        rag_prompt = create_rag_prompt(processed_message, context_texts, messages_history)
 
         # LangChain Bedrock LLMで回答生成
         messages = [HumanMessage(content=rag_prompt)]
@@ -63,8 +92,11 @@ async def chat_endpoint(request: Request):
         response_text = ai_response.content
         logger.info("LLMからの回答生成が完了しました")
 
-        # 生成した回答を返却
-        final_response = {"response": response_text}
+        # 生成した回答と関連ドキュメント情報を返却
+        final_response = {
+            "response": response_text,
+            "related_documents": document_info
+        }
         return JSONResponse(final_response)
 
     except json.JSONDecodeError:
@@ -115,19 +147,41 @@ async def call_lambda_function(function_name: str, payload: dict):
         return {"error": "Lambda関数の呼び出しに失敗しました", "details": str(e)}
 
 
-def create_rag_prompt(query: str, documents: list[str]) -> str:
+def format_conversation_history(messages_history=None, max_messages=60) -> str:
+    """会話履歴を整形して文字列として返す"""
+    
+    if not messages_history:
+        return ""
+        
+    conversation_text = ""
+    # 最新の数件の会話のみを使用（トークン制限を考慮）
+    recent_messages = messages_history[-max_messages:]
+    for message in recent_messages:
+        if message["role"] == "user":
+            conversation_text += f"ユーザー: {message['content']}\n"
+        elif message["role"] == "assistant":
+            conversation_text += f"アシスタント: {message['content']}\n"
+    
+    return f"過去の会話:\n{conversation_text}" if conversation_text else ""
+
+def create_rag_prompt(query: str, documents: list[str], messages_history=None) -> str:
     """社内FAQチャットボット用のRAGプロンプトを作成する"""
+    # 関連ドキュメントをコンテキストとして結合
     context = "\n".join(documents)
+    # 会話履歴の呼び出し
+    past_conversation = format_conversation_history(messages_history)
+    
     prompt = f"""
     社内FAQチャットボットです。関連ドキュメントを参考にして、質問に答えてください。
-    もし関連ドキュメントに答えがない場合は、「関連ドキュメントに回答がありませんでした。」と回答してください。
-
+    
     関連ドキュメント:
     {context}
-
+    
+    {past_conversation}
+    
     質問:
     {query}
-
+    
     回答:
     """
     return prompt
