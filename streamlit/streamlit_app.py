@@ -58,15 +58,22 @@ if user_message:
         if not st.session_state.session_id:
             st.session_state.session_id = response_data.get("session_id")
         
-        # 関連ドキュメントがある場合は表示
-        if related_documents:
-            with st.chat_message("assistant", avatar="📄"):
+        # 関連ドキュメント表示の処理
+        with st.chat_message("assistant", avatar="📄"):
+            if related_documents:
                 st.write("以下の関連ドキュメントが見つかりました:")
                 for doc in related_documents:
                     # 関連ドキュメントのタイトル表示
-                    st.markdown(f"* {doc['title']}")
-                    # キャプションも削除
+                    title = doc['title']
+                    st.markdown(f"* **{title}**")
+            else:
+                st.write("関連ドキュメントが見つかりませんでした")
+        
+        # ドキュメント情報をセッションに保存（既存コードを維持）
+        if related_documents:
             st.session_state.messages.append({"role": "documents", "content": related_documents})
+        else:
+            st.session_state.messages.append({"role": "documents", "content": []})
         
         # ボットの回答を表示
         with st.chat_message("assistant"):
