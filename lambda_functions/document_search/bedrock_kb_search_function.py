@@ -65,7 +65,7 @@ def lambda_handler(event, context):
             
             # メタデータからタイトルを取得
             title = metadata.get("title", "不明なドキュメント")
-
+            
             document_contents.append({
                 "content": content,
                 "metadata": {

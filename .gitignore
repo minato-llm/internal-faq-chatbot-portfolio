@@ -27,6 +27,9 @@ logs/
 htmlcov/
 .cache/
 
+# IDEとエディタの設定
+.DS_Store
+
 # AWS関連
 .aws/
 aws-credentials.json

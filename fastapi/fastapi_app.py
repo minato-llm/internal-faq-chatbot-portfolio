@@ -75,13 +75,14 @@ async def chat_endpoint(request: Request):
                 
                 # メタデータから必要な情報を抽出
                 title = metadata.get("title", "不明なドキュメント")
-                
+                                
                 # 一意のドキュメントタイトルのみをUI表示用に追加
                 if title not in unique_titles:
                     unique_titles.add(title)
-                    # ドキュメントタイトル情報を保存
+                    # ドキュメント情報を保存
                     document_info.append({
                         "title": title,
+                        "content": content
                     })              
                 # RAG用にコンテキストを追加
                 context_texts.append(content)
