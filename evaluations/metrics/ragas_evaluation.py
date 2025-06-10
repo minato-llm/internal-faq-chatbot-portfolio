@@ -2,6 +2,7 @@ import json
 from ragas.metrics import (
     Faithfulness,
     AnswerRelevancy,
+    ContextPrecision,
 )
 from ragas import evaluate
 from datasets import Dataset
@@ -15,6 +16,7 @@ from ragas.run_config import RunConfig
 from botocore.config import Config
 import requests
 import time
+import random
 from ragas.llms import LangchainLLMWrapper
 
 # 仮想環境内のNLTKデータパスを追加
@@ -29,20 +31,97 @@ BEDROCK_PROVIDER = os.environ.get("BEDROCK_PROVIDER")
 
 # テスト用データの準備 - 質問と模範回答のソースとして使用
 test_data = [
+    # 会社概要に関する質問
     {
-        "question": "年次有給休暇は入社してからどれくらいで付与されますか？",
+        "question": "本社の所在地を教えてください。",
+        "reference": "本社は〒100-0001 東京都千代田区架空町1-1-1 架空ビル10階に所在しています。"
     },
     {
-        "question": "休日に勤務した場合の代休制度について教えてください",
+        "question": "当社の代表取締役社長は誰ですか？",
+        "reference": "田中陽子が代表取締役社長兼CEOを務めています。"
     },
     {
-        "question": "遅刻や欠勤をする場合、どのように連絡すればよいですか？",
+        "question": "当社の事業年度はいつからいつまでですか？",
+        "reference": "当社の事業年度は毎年4月1日から翌年3月31日までです。"
     },
     {
-        "question": "遅刻や欠勤をする場合、どのように連絡すればよいですか？",
+        "question": "当社の従業員数は何名ですか？",
+        "reference": "当社の従業員数は連結で550名、単独で500名です（2024年5月20日現在）。"
     },
     {
-        "question": "休暇を取得する際の申請方法を教えてください",
+        "question": "当社の主な製品について教えてください。",
+        "reference": "AIチャットボットソリューション「Karaku-Chat」、業務効率化AIシステム「Karaku-Assist」、開発プラットフォーム「Karaku-Cloud」、診断サービス「Karaku-Guard」などがあります。"
+    },
+    
+    # 給与計算規則に関する質問
+    {
+        "question": "残業手当の計算方法を教えてください。",
+        "reference": "残業手当は法定労働時間を超える労働に対し、基本給の1時間当たりの賃金額の1.25倍（月60時間を超える時間外労働については1.5倍）が支給されます。"
+    },
+    {
+        "question": "給与の支給日はいつですか？",
+        "reference": "給与の支給日は原則として毎月25日です。ただし、支給日が金融機関休業日の場合は、前営業日となります。"
+    },
+    {
+        "question": "賞与の支給時期はいつですか？",
+        "reference": "賞与は原則として年2回、夏季（6月）および冬季（12月）に支給されます。"
+    },
+    {
+        "question": "賞与の算定期間はいつからいつまでですか？",
+        "reference": "夏季賞与の算定期間は前年12月1日から当年5月31日まで、冬季賞与の算定期間は当年6月1日から11月30日までです。"
+    },
+    {
+        "question": "深夜労働の手当はどのように計算されますか？",
+        "reference": "深夜手当は午後10時から午前5時までの労働に対し、基本給の1時間当たりの賃金額の0.25倍が支給されます。"
+    },
+
+    # 勤怠管理マニュアルに関する質問
+    {
+        "question": "勤怠管理マニュアルはどのような従業員に適用されますか？",
+        "reference": "このマニュアルは、会社に勤務するすべての従業員（正社員、契約社員、嘱託社員、パートタイマー、アルバイトを含む）に適用されます。"
+    },
+    {
+        "question": "年次有給休暇はいつ付与されますか？",
+        "reference": "入社6ヶ月経過後に10日付与されます。その後、勤続年数1年ごとに1日～2日ずつ加算され、最大で年20日付与されます。"
+    },
+    {
+        "question": "夏季休暇と年末年始休暇の期間はいつですか？",
+        "reference": "夏季休暇は原則として毎年8月13日から8月15日までの3日間、年末年始休暇は原則として毎年12月29日から1月3日までの6日間とします。"
+    },
+    {
+        "question": "休暇を取得する際の申請方法を教えてください。",
+        "reference": "従業員は休暇を取得する場合は、原則として休暇取得日の3日前までにシステムまたは所定の休暇申請書により申請し、所属部署長の承認を得なければなりません。当日の急な休暇申請は原則として認められません。"
+    },
+    {
+        "question": "勤怠管理システムが利用できない場合はどうすればよいですか？",
+        "reference": "システムを利用できない場合、または会社が認めた場合は、タイムカードによる勤怠管理を行うことができます。タイムカードは出勤時および退勤時に従業員本人が打刻するものとします。"
+    },
+    
+    ##　特殊パターンの質問
+    #　特殊文字を含む質問
+    {
+        "question": "当社の主な取＠先の銀行を教えて？さい。",
+        "reference": "主な取引先の銀行は、星空銀行架空支店と大森信用金庫の本社営業部です。"
+    },
+    #　誤字脱字を含む質問
+    {
+        "question": "当社の発行済株総はいらですか？",
+        "reference": "当社は100万株を発行しています。"
+    },
+    # 複数のドキュメントを参照する質問
+    {
+        "question": "今年の夏季休暇と夏季賞与について教えて下さい。",
+        "reference": "夏季休暇は原則として毎年8月13日から8月15日までの3日間、夏季賞与は6月に支給されます。"
+    },
+     # 複数のドキュメントの関連性を問う質問
+    {
+        "question": "給与計算規則と勤怠管理マニュアルの関係性を教えて下さい。",
+        "reference": "給与計算規則と勤怠管理マニュアルは密接に関連しています。勤怠管理マニュアルの第25条では遅刻・早退・欠勤等の勤怠状況が給与計算に反映されると明記されており、時間外労働・休日労働に関する規定も両規則間で連動しています。"
+    },
+    #関連文書に明示的に記載がない質問
+    {
+        "question": "プログラミングの勉強方法について教えて下さい。",
+        "reference": "申し訳ありませんが、関連ドキュメントが提供されていないため、プログラミングの勉強方法について正確な回答はできかねます。"
     }
 ]
 
@@ -51,9 +130,9 @@ config = Config(
     connect_timeout=120,  # 接続タイムアウト
     read_timeout=900,     # 読み取りタイムアウト
     retries={
-        "max_attempts": 6,  # リトライ回数
+        "max_attempts": 10,  # リトライ回数を増加
         "mode": "adaptive",
-        "total_max_attempts": 10
+        "total_max_attempts": 15
     }
 )
 
@@ -94,7 +173,7 @@ embeddings = BedrockEmbeddings(
 
 # 実行設定：安定性重視
 run_config = RunConfig(
-    timeout=600,
+    timeout=900,  # タイムアウトを延長
     max_workers=1  # スロットリング回避
 )
 
@@ -177,10 +256,10 @@ def evaluate_model_answers():
     for i, question in enumerate(test_questions):
         print(f"\n質問 {i+1}/{len(test_questions)}: {question}")
         
-        # 最初の質問以外は15秒待機
+        # スロットリング回避のため、最初の質問以外は15秒待機
         if i > 0:
-            wait_time = 15
-            print(f"スロットリング回避のため、{wait_time}秒待機します...")
+            # 時間間隔を長くしてThrottling対策
+            wait_time = 30 + random.uniform(0, 10)  # 30〜40秒のランダムな待機時間
             time.sleep(wait_time)
         
         try:
@@ -188,7 +267,7 @@ def evaluate_model_answers():
                 "http://localhost:8000/chat",
                 json={"message": question},
                 headers={"Content-Type": "application/json"},
-                timeout=120
+                timeout=200
             )
             
             if response.status_code == 200:
@@ -225,10 +304,14 @@ def evaluate_model_answers():
     # 3. 評価データセットを作成
     dataset_items = []
     for q, actual, contexts in zip(test_questions, actual_answers, contexts_list):
+        # テストデータから対応するreference(模範回答)を取得
+        reference = next((item["reference"] for item in test_data if item["question"] == q), "")
+        
         dataset_items.append({
             "user_input": q,
             "response": actual,
-            "retrieved_contexts": contexts
+            "retrieved_contexts": contexts,
+            "reference": reference
         })
     
     # 4. データ検証
@@ -269,6 +352,7 @@ def evaluate_model_answers():
             metrics=[
                 faithfulness_metric,
                 AnswerRelevancy(),
+                ContextPrecision(),
             ],
             embeddings=embeddings,
             llm=bedrock_llm,
@@ -281,10 +365,11 @@ def evaluate_model_answers():
         serializable_results = {
             "faithfulness": safe_float_conversion(get_metric_value(results, "faithfulness")),
             "answer_relevancy": safe_float_conversion(get_metric_value(results, "answer_relevancy")),
+            "context_precision": safe_float_conversion(get_metric_value(results, "context_precision")),
             "details": [],
             "summary": {
                 "total_samples": len(eval_dataset),
-                "evaluation_metrics": ["faithfulness", "answer_relevancy"]
+                "evaluation_metrics": ["faithfulness", "answer_relevancy", "context_precision"]
             }
         }
         
@@ -294,9 +379,9 @@ def evaluate_model_answers():
             row_data = {
                 "question": eval_dataset[i]["user_input"],
                 "answer": eval_dataset[i]["response"][:200] + "..." if len(eval_dataset[i]["response"]) > 200 else eval_dataset[i]["response"],
-                "contexts_count": len(eval_dataset[i]["retrieved_contexts"]),
                 "faithfulness": safe_float_conversion(df.iloc[i].get("faithfulness")),
-                "answer_relevancy": safe_float_conversion(df.iloc[i].get("answer_relevancy"))
+                "answer_relevancy": safe_float_conversion(df.iloc[i].get("answer_relevancy")),
+                "context_precision": safe_float_conversion(df.iloc[i].get("context_precision")),
             }
             serializable_results["details"].append(row_data)
         

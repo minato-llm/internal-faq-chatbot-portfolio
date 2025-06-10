@@ -54,11 +54,11 @@ def main():
         with open(test_questions_path, "r", encoding="utf-8") as f:
             test_questions = json.load(f)
         
-        print(f"📊 {len(test_questions)}件の質問でLangSmith評価を開始します...")
+        print(f"{len(test_questions)}件の質問でLangSmith評価を開始します...")
         
         # テスト実行
         for i, test_case in enumerate(test_questions, 1):
-            print(f"🔄 質問 {i}/{len(test_questions)}: {test_case['question'][:50]}...")
+            print(f"質問 {i}/{len(test_questions)}: {test_case['question'][:50]}...")
             
             # エラーハンドリング強化: 3回までリトライ
             max_retries = 3
@@ -75,9 +75,9 @@ def main():
                     else:
                         print(f"最大リトライ回数に達しました: {e}")
             
-            # 次のリクエスト前に12秒待機（レート制限対策）
+            # 次のリクエスト前に30秒待機（レート制限対策）
             if i < len(test_questions):
-                time.sleep(12)
+                time.sleep(30)
         
         print(f"評価が完了しました。")
         print(f"LangSmith UIで結果を確認: https://smith.langchain.com/projects/{project_name}")
