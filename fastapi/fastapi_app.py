@@ -50,15 +50,15 @@ async def chat_endpoint(request: Request):
         
         logger.info("LLMの回答生成を開始します")
         # AWS Lambda (前処理) 関数を呼び出す
-        lambda_response_preprocess = await call_lambda_function(TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME, {"message": user_message})
-        processed_message = lambda_response_preprocess.get("processed_message")
+        # lambda_response_preprocess = await call_lambda_function(TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME, {"message": user_message})
+        # processed_message = lambda_response_preprocess.get("processed_message")
       
         # AWS Lambda (ベクトル化) 関数を呼び出す
-        lambda_response_vectorize = await call_lambda_function(BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
-        query_vector = lambda_response_vectorize.get("query_vector")
+        # lambda_response_vectorize = await call_lambda_function(BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
+        # query_vector = lambda_response_vectorize.get("query_vector")
 
         # AWS Lambda (ナレッジ検索) 関数を呼び出す
-        lambda_response_bedrock_kb = await call_lambda_function(BEDROCK_KB_SEARCH_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
+        lambda_response_bedrock_kb = await call_lambda_function(BEDROCK_KB_SEARCH_LAMBDA_FUNCTION_NAME, {"query_text": user_message})
         related_documents = lambda_response_bedrock_kb.get("related_documents", [])
         
         # 関連ドキュメントの情報を抽出
@@ -88,7 +88,7 @@ async def chat_endpoint(request: Request):
                 context_texts.append(content)
             
         # 会話履歴を含むRAGプロンプトを作成
-        rag_prompt = create_rag_prompt(processed_message, context_texts, messages_history)
+        rag_prompt = create_rag_prompt(user_message, context_texts, messages_history)
         
         # LangChain Bedrock LLMで回答生成
         messages = [HumanMessage(content=rag_prompt)]
@@ -176,16 +176,28 @@ def create_rag_prompt(query: str, documents: list[str], messages_history=None) -
     past_conversation = format_conversation_history(messages_history)
     
     prompt = f"""
-    社内FAQチャットボットです。関連ドキュメントを参考にして、質問に答えてください。
-    
-    関連ドキュメント:
+    あなたは株式会社架空ソリューションズの社内FAQチャットボットです。
+    以下のルールに厳密に従って、ユーザーの質問に回答してください。
+
+    # 回答プロセス：
+    1. まず、ユーザーの質問を分析し、質問の意図と必要な情報を正確に理解してください。
+    2. 次に、提供された「関連ドキュメント」の中から質問に最も関連性の高い箇所を特定してください。
+    3. 特定した情報のみを根拠として、質問に直接的かつ簡潔に回答を作成してください。
+
+    # 厳守事項：
+    - 関連ドキュメントに記載されていない情報や、あなたの一般的な知識は回答に含めないでください。
+    - 質問と直接関係のない情報は、たとえ関連ドキュメントに含まれていても回答に含めないでください。
+    - 回答の根拠となる情報が見つからない場合は、「申し訳ありませんが、関連ドキュメントにはその情報がありません」と回答してください。
+    - 専門用語や略語が出てきた場合、もしその説明が関連ドキュメント内にあれば、必要に応じて簡潔な説明を加えてください。
+
+    # 関連ドキュメント：
     {context}
-    
+
     {past_conversation}
-    
-    質問:
+
+    # 質問：
     {query}
-    
-    回答:
+
+    # 回答：
     """
     return prompt
