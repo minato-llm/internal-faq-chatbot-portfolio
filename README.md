@@ -15,7 +15,6 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
     -   FastAPI 0.100.0
 -   **ライブラリ：**
     -   pandas 2.1.2
-    -   numpy 1.25.2
     -   Uvicorn 0.23.2
     -   LangChain-Community 0.2.19
     -   LangChain-AWS 0.1.18
@@ -23,7 +22,12 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
     -   AWS Lambda Powertools 2.36.0
     -   Boto3 1.34.131
     -   Python-dotenv 1.0.0
--   **インフラ：** AWS (Lambda, S3, Bedrock Knowledge Base, Bedrock, IAM)
+    -   ragas 0.2.0
+    -   langsmith 0.1.112
+    -   datasets 2.15.0
+    -   nltk 3.8.1
+    -   pypdf 3.15.1
+-   **インフラ：** AWS (Lambda, S3, Bedrock, IAM)
 -   **エディタ：** Cursor
 -   **ノートブック：** Google Colab
 -   **コード管理：** Git, GitHub
