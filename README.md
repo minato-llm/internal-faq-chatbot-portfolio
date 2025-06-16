@@ -134,6 +134,10 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
     プロンプトエンジニアリングの改善
     ![image](https://github.com/user-attachments/assets/646c9cba-b9a8-4dda-9e04-b59b69482919)
     ![image](https://github.com/user-attachments/assets/ffcb6d48-1951-4f6f-ac4a-6111b38ed157)
+　　
+　　RAGの精度改善
+　　![image](https://github.com/user-attachments/assets/d601f70a-fef3-4719-bdff-cdd28b7afb2c)
+
 
 　　
 
