@@ -132,7 +132,10 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 2.  **(LLM・RAGの精度改善)**
     -   Rages 、LangSmithで性能評価した結果を元に分析してプロンプトエンジニアリング・RAGの精度改善を実施。再テストして前回と比べて精度が上がっているか検証する。  
     プロンプトエンジニアリングの改善
-　　![image](https://github.com/user-attachments/assets/ffcb6d48-1951-4f6f-ac4a-6111b38ed157)
+    ![image](https://github.com/user-attachments/assets/646c9cba-b9a8-4dda-9e04-b59b69482919)
+    ![image](https://github.com/user-attachments/assets/ffcb6d48-1951-4f6f-ac4a-6111b38ed157)
+
+　　
 
 
 
