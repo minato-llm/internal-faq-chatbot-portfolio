@@ -21,10 +21,7 @@ app = FastAPI()
 
 # 環境変数の初期化
 AWS_REGION = os.environ.get("AWS_REGION")
-TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME = os.environ.get("TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME")
-BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME = os.environ.get("BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME")
 BEDROCK_KB_SEARCH_LAMBDA_FUNCTION_NAME = os.environ.get("BEDROCK_KB_SEARCH_LAMBDA_FUNCTION_NAME")
-S3_PDF_PROCESSOR_LAMBDA_FUNCTION_NAME = os.environ.get("S3_PDF_PROCESSOR_LAMBDA_FUNCTION_NAME")
 
 # AWS Lambdaクライアントの初期化
 lambda_client = boto3.client("lambda", region_name=AWS_REGION)
@@ -50,17 +47,6 @@ async def chat_endpoint(request: Request):
             return JSONResponse({"error": "メッセージが送信されていません"}, status_code=400)
         
         logger.info("LLMの回答生成を開始します")
-
-        # AWS Lambda (前処理) 
-        # lambda_response_preprocess = await call_lambda_function(TEXT_PREPROCESSOR_LAMBDA_FUNCTION_NAME, {"message": user_message})
-        # processed_message = lambda_response_preprocess.get("processed_message")
-      
-        # AWS Lambda (ベクトル化) 
-        # lambda_response_vectorize = await call_lambda_function(BEDROCK_VECTOR_LAMBDA_FUNCTION_NAME, {"query_text": processed_message})
-        # query_vector = lambda_response_vectorize.get("query_vector")
-        
-        # AWS Lambda (S3のPDF事前処理)
-        await call_lambda_function(S3_PDF_PROCESSOR_LAMBDA_FUNCTION_NAME, {})
 
         # AWS Lambda (ナレッジ検索)
         lambda_response_bedrock_kb = await call_lambda_function(BEDROCK_KB_SEARCH_LAMBDA_FUNCTION_NAME, {"query_text": user_message})
