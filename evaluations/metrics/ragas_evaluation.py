@@ -1,3 +1,4 @@
+# evaluations/metrics/ragas_evaluation.py
 import json
 from ragas.metrics import (
     Faithfulness,
@@ -97,13 +98,16 @@ test_data = [
         "reference": "システムを利用できない場合、または会社が認めた場合は、タイムカードによる勤怠管理を行うことができます。タイムカードは出勤時および退勤時に従業員本人が打刻するものとします。"
     },
     
-    ##　特殊パターンの質問
-    #　特殊文字を含む質問
+    # =============================================================================
+    # 特殊パターンの質問
+    # =============================================================================
+
+    # 特殊文字を含む質問
     {
         "question": "当社の主な取＠先の銀行を教えて？さい。",
         "reference": "主な取引先の銀行は、星空銀行架空支店と大森信用金庫の本社営業部です。"
     },
-    #　誤字脱字を含む質問
+    # 誤字脱字を含む質問
     {
         "question": "当社の発行済株総はいらですか？",
         "reference": "当社は100万株を発行しています。"
@@ -130,7 +134,7 @@ config = Config(
     connect_timeout=120,  # 接続タイムアウト
     read_timeout=900,     # 読み取りタイムアウト
     retries={
-        "max_attempts": 10,  # リトライ回数を増加
+        "max_attempts": 10,  # リトライ回数
         "mode": "adaptive",
         "total_max_attempts": 15
     }
@@ -143,7 +147,7 @@ bedrock_client = boto3.client(
     config=config
 )
 
-# LLM用のクライアントを別途作成
+# LLM用のクライアントの初期化
 bedrock_runtime_client = boto3.client(
     "bedrock-runtime",
     region_name=AWS_REGION,
@@ -156,9 +160,9 @@ bedrock_llm = ChatBedrock(
     region_name=AWS_REGION,
     provider=BEDROCK_PROVIDER,
     client=bedrock_runtime_client,
-    # 日本語statement抽出のための設定追加
+    # Bedrock LLMの生成パラメータ設定
     model_kwargs={
-        "temperature": 0.1,  # より確定的な出力
+        "temperature": 0.1, 
         "top_p": 0.9,
         "max_tokens": 2048
     }
@@ -173,75 +177,9 @@ embeddings = BedrockEmbeddings(
 
 # 実行設定：安定性重視
 run_config = RunConfig(
-    timeout=900,  # タイムアウトを延長
+    timeout=900,  # タイムアウト
     max_workers=1  # スロットリング回避
 )
-
-# 安全にfloat値に変換する関数
-def safe_float_conversion(value):
-    """安全にfloat値に変換する関数"""
-    if value is None:
-        return None
-    
-    # 配列の場合は平均値を取る
-    if hasattr(value, '__iter__') and not isinstance(value, str):
-        try:
-            # numpy配列やリストの場合
-            import numpy as np
-            arr = np.array(value)
-            # NaN値を除外して平均値を計算
-            arr_clean = arr[~np.isnan(arr)]
-            return float(arr_clean.mean()) if len(arr_clean) > 0 else None
-        except:
-            return None
-    
-    # スカラー値の場合
-    try:
-        if pd.isna(value):
-            return None
-        return float(value)
-    except:
-        return None
-
-# EvaluationResultオブジェクトから値を安全に取得する関数
-def get_metric_value(results, metric_name):
-    """EvaluationResultオブジェクトから指定されたメトリック値を取得"""
-    try:
-        # 辞書形式でのアクセスを試行
-        if hasattr(results, '__getitem__'):
-            return results[metric_name]
-        # 属性アクセスを試行
-        elif hasattr(results, metric_name):
-            return getattr(results, metric_name)
-        # to_pandas()でDataFrameに変換してからアクセス
-        elif hasattr(results, 'to_pandas'):
-            df = results.to_pandas()
-            if metric_name in df.columns:
-                return df[metric_name].iloc[0] if len(df) > 0 else None
-        return None
-    except Exception as e:
-        print(f"メトリック '{metric_name}' の取得中にエラー: {e}")
-        return None
-
-def extract_contexts(response_json):
-    """レスポンスからコンテキストを抽出"""
-    related_docs = response_json.get("related_documents", [])
-    contexts = []
-    
-    for doc in related_docs:
-        if isinstance(doc, dict):
-            if "content" in doc and doc["content"]:
-                content = doc["content"].strip()
-                if content:
-                    contexts.append(content)
-            elif "title" in doc and doc["title"]:
-                title = doc["title"].strip()
-                if title:
-                    contexts.append(title)
-        elif isinstance(doc, str) and doc.strip():
-            contexts.append(doc.strip())
-    
-    return contexts
 
 def evaluate_model_answers():
     """RAGシステムの回答を評価"""
@@ -256,7 +194,7 @@ def evaluate_model_answers():
     for i, question in enumerate(test_questions):
         print(f"\n質問 {i+1}/{len(test_questions)}: {question}")
         
-        # スロットリング回避のため、最初の質問以外は15秒待機
+        # スロットリング回避のため、最初の質問以外は30秒待機
         if i > 0:
             # 時間間隔を長くしてThrottling対策
             wait_time = 30 + random.uniform(0, 10)  # 30〜40秒のランダムな待機時間
@@ -321,7 +259,7 @@ def evaluate_model_answers():
         if (item.get("response", "").strip() and 
             item.get("retrieved_contexts") and 
             len(item.get("retrieved_contexts", [])) > 0 and
-            len(item.get("response", "").strip()) > 5):  # 最小文字数チェック追加
+            len(item.get("response", "").strip()) > 5):  # 最小文字数チェック
             valid_items.append(item)
     
     if not valid_items:
@@ -398,6 +336,72 @@ def evaluate_model_answers():
             "total_questions": len(test_questions),
             "valid_responses": len(valid_items)
         }
+
+# 安全にfloat値に変換する関数
+def safe_float_conversion(value):
+    """安全にfloat値に変換する関数"""
+    if value is None:
+        return None
+    
+    # 配列の場合は平均値を取る
+    if hasattr(value, '__iter__') and not isinstance(value, str):
+        try:
+            # numpy配列やリストの場合
+            import numpy as np
+            arr = np.array(value)
+            # NaN値を除外して平均値を計算
+            arr_clean = arr[~np.isnan(arr)]
+            return float(arr_clean.mean()) if len(arr_clean) > 0 else None
+        except:
+            return None
+    
+    # スカラー値の場合
+    try:
+        if pd.isna(value):
+            return None
+        return float(value)
+    except:
+        return None
+
+# EvaluationResultオブジェクトから値を安全に取得する関数
+def get_metric_value(results, metric_name):
+    """EvaluationResultオブジェクトから指定されたメトリック値を取得"""
+    try:
+        # 辞書形式でのアクセスを試行
+        if hasattr(results, '__getitem__'):
+            return results[metric_name]
+        # 属性アクセスを試行
+        elif hasattr(results, metric_name):
+            return getattr(results, metric_name)
+        # to_pandas()でDataFrameに変換してからアクセス
+        elif hasattr(results, 'to_pandas'):
+            df = results.to_pandas()
+            if metric_name in df.columns:
+                return df[metric_name].iloc[0] if len(df) > 0 else None
+        return None
+    except Exception as e:
+        print(f"メトリック '{metric_name}' の取得中にエラー: {e}")
+        return None
+
+def extract_contexts(response_json):
+    """レスポンスからコンテキストを抽出"""
+    related_docs = response_json.get("related_documents", [])
+    contexts = []
+    
+    for doc in related_docs:
+        if isinstance(doc, dict):
+            if "content" in doc and doc["content"]:
+                content = doc["content"].strip()
+                if content:
+                    contexts.append(content)
+            elif "title" in doc and doc["title"]:
+                title = doc["title"].strip()
+                if title:
+                    contexts.append(title)
+        elif isinstance(doc, str) and doc.strip():
+            contexts.append(doc.strip())
+    
+    return contexts
 
 # メイン処理
 if __name__ == "__main__":

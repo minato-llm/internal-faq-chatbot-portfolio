@@ -1,3 +1,4 @@
+# evaluations/metrics/langsmith_evaluation.py
 import os
 import sys
 import json
@@ -40,8 +41,8 @@ bedrock_llm = ChatBedrock(
     config=boto3_config
 )
 
-def main():
-    """LangSmith評価のメイン実行関数"""
+def run_langsmith_evaluation():
+    """LangSmith評価を実行してトレースを記録"""
     
     try:
         # テスト用データの読み込み
@@ -60,7 +61,7 @@ def main():
         for i, test_case in enumerate(test_questions, 1):
             print(f"質問 {i}/{len(test_questions)}: {test_case['question'][:50]}...")
             
-            # エラーハンドリング強化: 3回までリトライ
+            # エラーハンドリング: 3回までリトライ
             max_retries = 3
             for attempt in range(max_retries):
                 try:
@@ -98,7 +99,7 @@ def trace_api_request(question, project_name, api_endpoint):
             api_endpoint,
             headers={"Content-Type": "application/json"},
             json={"message": question, "session_id": None, "messages_history": []},
-            timeout=30  # タイムアウト追加
+            timeout=30
         )
         
         response.raise_for_status()  # HTTPエラーをチェック
@@ -125,4 +126,4 @@ def trace_api_request(question, project_name, api_endpoint):
         print(f"予期しないエラー: {error_msg}")
 
 if __name__ == "__main__":
-    main() 
+    run_langsmith_evaluation() 
