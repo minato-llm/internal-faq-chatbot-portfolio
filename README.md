@@ -37,26 +37,30 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 ## ディレクトリ構成
 ```
 ├── internal_faq_chatbot/
-│   ├── documents/           # 関連ドキュメント
+│   ├── documents/                               # 関連ドキュメント
 │   │   ├── 会社概要.pdf
 │   │   ├── 給与計算規則.pdf
 │   │   └── 勤怠管理マニュアル.pdf
-│   ├── fastapi/             # チャットの送信・受信
+│   ├── evaluations/                             # 評価関連
+│   │   ├── data/                                # 評価データ
+│   │   │   └── langsmith_test_questions.json
+│   │   ├── metrics/                             # 評価スクリプト
+│   │   │   ├── langsmith_evaluation.py
+│   │   │   └── ragas_evaluation.py
+│   │   └── ragas_results/                       # 評価結果
+│   │       └── ragas_evaluation_results.json
+│   ├── fastapi/                                 # チャットの送受信
 │   │   └── fastapi_app.py
-│   ├── lambda_functions/    # Lambda関数
-│   │   ├── document_search/ # ドキュメント検索
-│   │   │   ├── bedrock_kb_search_function.py
-│   │   │   └── requirements.txt
-│   │   ├── preprocessor/    # チャットの前処理
-│   │   │   ├── lambda_preprocessor_function.py
-│   │   │   └── requirements.txt
-│   │   └── vectorization/   # チャットのベクトル化
-│   │       ├── bedrock_vector_function.py
+│   ├── lambda_functions/                        # Lambda関数
+│   │   └── document_search/                     # ドキュメント検索
+│   │       ├── bedrock_kb_search_function.py
 │   │       └── requirements.txt
-│   ├── streamlit/           # 画面UI
+│   ├── streamlit/                               # 画面UI
 │   │   └── streamlit_app.py
-│   ├── .gitignore           # Git管理から除外
-│   └── requirements.txt     # プロジェクト全体の依存関係
+│   ├── .gitignore                               # Git管理から除外
+│   ├── README.md                                # Readmeファイル
+│   └── requirements.txt                         # プロジェクト全体の依存関係
+
 ```
 
 ## 動作手順
