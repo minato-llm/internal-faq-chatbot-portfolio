@@ -188,10 +188,10 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
     **性能向上の具体例**:
 
     - 改善前: 複数Lambda関数による多段階処理  
-      質問文 → PDF前処理Lambda → 質問文前処理Lambda → ベクトル化Lambda → Bedrock Knowledge Base検索Lambda → 回答生成
+      質問文 → PDF前処理 → 質問文前処理 → ベクトル化 → Bedrock Knowledge Base検索 → 回答生成
 
     - 改善後: 統合処理による直接的なフロー  
-      質問文 → Bedrock Knowledge Base検索Lambda → 回答生成
+      質問文 → Bedrock Knowledge Base検索 → 回答生成
 
     **技術的メリット**:
     - **レイテンシの短縮**: 不要な処理ステップ削除により応答時間改善
