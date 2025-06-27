@@ -82,9 +82,9 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
     -   AWS Bedrockで生成された回答は、AWS Lambdaを経由してチャットボットを通じてユーザーに回答を返信。
 
 ## AWSアーキテクチャー図
+![image](https://github.com/user-attachments/assets/d4d13cd0-d1d4-4f2d-9ada-b89555583d5b)
 
-(ここにAWSアーキテクチャー図を挿入)
-<!-- ![AWSアーキテクチャー図](./path/to/your/architecture_diagram.png) -->
+
 
 ## デモ
 
@@ -162,7 +162,7 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 
     ![image](https://github.com/user-attachments/assets/ffcb6d48-1951-4f6f-ac4a-6111b38ed157)
 
-    これらの改善により、質問と回答の関連性向上とハルシネーション抑制を実現しました、  
+    これらの改善により、質問と回答の関連性向上とハルシネーション抑制を実現しました。
 
     ### 【RAGの精度改善】
 
