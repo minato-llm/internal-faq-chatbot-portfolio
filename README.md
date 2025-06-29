@@ -63,6 +63,8 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 
 ```
 ## AWSアーキテクチャー図
+![image](https://github.com/user-attachments/assets/9f0caddf-9040-44fb-a2d2-e8388383cca4)
+
 
 
 ## 動作手順
