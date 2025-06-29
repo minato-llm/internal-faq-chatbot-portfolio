@@ -63,7 +63,7 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 
 ```
 ## AWSアーキテクチャー図
-![image](https://github.com/user-attachments/assets/d4d13cd0-d1d4-4f2d-9ada-b89555583d5b)
+
 
 ## 動作手順
 
@@ -82,10 +82,9 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
     -  生成された回答をユーザーに返信。
 
 ## デモ
-
-(ここにデモのスクリーンショット挿入)
-<!-- ![デモ画像1](./path/to/your/demo_image1.png) -->
-<!-- ![デモ画像2](./path/to/your/demo_image2.png) -->
+![image](https://github.com/user-attachments/assets/f450e986-db15-409e-8477-007c8c321f25)
+"question": "給与の支給日はいつですか？"  
+"reference": "給与の支給日は原則として毎月25日です。ただし、支給日が金融機関休業日の場合は、前営業日となります。"
 
 ## 評価
 1.  **(RAG性能評価)**
