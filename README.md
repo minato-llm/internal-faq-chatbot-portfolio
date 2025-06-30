@@ -34,6 +34,13 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 -   **言語モデル：** Claude 3.5 Sonnet 20241022 v2
 -   **LLM評価：** Ragas 0.2.0, LangSmith 0.1.112
 
+## 技術選定理由
+(下記理由を記載)
+-   **インフラ：** AWS (Lambda, S3, Bedrock, IAM)
+-   **埋め込みモデル：** Titan Text Embeddings v2
+-   **ベクトルDB：** Amazon OpenSearch Serverless
+-   **言語モデル：** Claude 3.5 Sonnet 20241022 v2
+-   **LLM評価：** Ragas 0.2.0, LangSmith 0.1.112
 ## ディレクトリ構成
 ```
 ├── internal_faq_chatbot/
