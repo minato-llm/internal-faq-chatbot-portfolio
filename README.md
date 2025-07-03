@@ -39,11 +39,16 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 -   **インフラ：** AWS  
     -   自身のAWS利用経験があり、慣れた環境で迅速に開発を進められるという前提に加え、Amazon Bedrockを通じてClaudeモデルを利用できる点を重視しました。  
         Claudeモデルは日本語の文脈理解と忠実かつ簡潔な回答生成に優れており、本プロジェクトの要件である「社内FAQ」に最適であると判断しました。
+        
 -   **埋め込みモデル：** Titan Text Embeddings v2    
     -   RAGに最適化された設計で、次元サイズを選択して精度、コスト、レイテンシのバランスが取れるため採用しました。    
-        他モデルのCohereは英語、多言語に特化しているため候補から外しました。   
+        他モデルのCohereは英語、多言語に特化しているため候補から外しました。
+        
+-   **ベクトルDB：** Amazon OpenSearch Serverless      
+    -   当初は複数のサービスと連携出来るAmazon Kendraを利用していましたが、テスト中に高額のAPI料がかかるため断念しました。    
+        Amazon Aurora（SQL連携）やNeptune（グラフ分析）は用途面で本プロジェクトの要件と合致していないため、  
+        コスト効率に優れたAmazon OpenSearch Serverlessを採用しました。 
 　　  
--   **ベクトルDB：** Amazon OpenSearch Serverless
 -   **言語モデル：** Claude 3.5 Sonnet 20241022 v2
 -   **LLM評価：** Ragas 0.2.0, LangSmith 0.1.112
 ## ディレクトリ構成
