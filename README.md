@@ -25,9 +25,9 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
     -   Datasets 2.15.0
     -   NLTK 3.8.1
     -   PyPDF 3.15.1
--   **インフラ：** AWS (Lambda, S3, Bedrock, IAM)
--   **エディタ：** Cursor
--   **コード管理：** Git, GitHub
+-   **クラウド：** AWS (Lambda, S3, Bedrock, IAM)
+-   **エディタ：** Cursor 1.0.0
+-   **コード管理：** Git 2.39.5, GitHub
 -   **チャットUI：** Streamlit 1.27.2
 -   **埋め込みモデル：** Titan Text Embeddings v2
 -   **ベクトルDB：** Amazon OpenSearch Serverless
@@ -35,8 +35,7 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 -   **LLM評価：** Ragas 0.2.0, LangSmith 0.1.112
 
 ## 技術選定理由
-(下記理由を記載)
--   **インフラ：** AWS  
+-   **クラウド：** AWS  
     -   自身のAWS利用経験があり、慣れた環境で迅速に開発を進められるという前提に加え、Amazon Bedrockを通じてClaudeモデルを利用できる点を重視しました。  
         Claudeモデルは日本語の文脈理解と忠実かつ簡潔な回答生成に優れており、本プロジェクトの要件である「社内FAQ」に最適であると判断しました。
         
@@ -49,8 +48,13 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
         Amazon Aurora（SQL連携）やNeptune（グラフ分析）は用途面で本プロジェクトの要件と合致していないため、  
         コスト効率に優れたAmazon OpenSearch Serverlessを採用しました。 
 　　  
--   **言語モデル：** Claude 3.5 Sonnet 20241022 v2
--   **LLM評価：** Ragas 0.2.0, LangSmith 0.1.112
+-   **言語モデル：** Claude 3.5 Sonnet 20241022 v2        
+    -   AWS東京リージョンで利用可能なモデルから選定しました。言語モデルは最新版でもバグが起こりにくく、このモデルはトークンコストも据え置かれるため、性能とコストのバランスが良い最新のClaude 3.5 Sonnetを採用しました。  
+        低コストな 3.0 Haikuも検討しましたが、求める処理能力を考慮し、総合的なパフォーマンスを重視しました。    
+
+-   **LLM評価：** Ragas 0.2.0, LangSmith 0.1.112  
+    -   RAGシステムの網羅的な評価体制を構築するため、管理基盤のLangSmithと評価フレームワークのRagasを連携させて採用しました。  
+        LangSmithで実行ログやプロンプトを管理・可視化し、Ragasを用いて回答の忠実性などを定量的に評価することで、課題の特定と改善を重視しています。 
 ## ディレクトリ構成
 ```
 ├── internal_faq_chatbot/
@@ -272,7 +276,6 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 *   Anthropicが提供するClaude APIの利用経験
 *   StreamlitのPocフレームワークの開発経験
 *   LangChainのLLMフレームワークの開発経験
-*   FastAPIを用いたAPIの開発経験
 *   AWS (Lambda、S3、Bedrock、IAM) でのシステム構築経験
 *   チャンキング、エンべディング、ベクトルDBの経験
 *   Rages、LangSmithを利用したLLMの性能評価経験
