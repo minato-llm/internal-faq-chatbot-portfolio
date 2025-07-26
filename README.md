@@ -36,7 +36,7 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 
 ## 技術選定理由
 
--   **フレームワーク：** LangChain  
+-   **フレームワーク：** LangChain 0.2.17  
     -   LangChainは現在のLLMアプリケーション開発における事実上の標準フレームワークであり、LangSmithなどの評価ツールとの連携が容易。  
         また、Amazon Bedrockとの相性も良く、LangChain では Bedrock 用の公式クラス（BedrockChat）が提供されており、Claudeモデルを簡潔に呼び出すことができる。  
         LlamaIndexは主にドキュメントの複雑な検索戦略に強みがありますが。アプリケーション全体の構成や  
