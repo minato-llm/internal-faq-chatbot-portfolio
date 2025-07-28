@@ -80,7 +80,7 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 │   ├── fastapi/                                 # チャットの送受信
 │   │   └── fastapi_app.py
 │   ├── lambda_functions/                        # Lambda関数
-│   │   └── document_search/                     # ドキュメント検索
+│   │   └── document_search/                     # ベクトル検索
 │   │       ├── bedrock_kb_search_function.py
 │   │       └── requirements.txt
 │   ├── streamlit/                               # 画面UI
@@ -92,6 +92,11 @@ LLM＋RAGを使用し、社内ドキュメント (会社概要、給与計算規
 ```
 ## AWSアーキテクチャー図
 ![image](https://github.com/user-attachments/assets/9f0caddf-9040-44fb-a2d2-e8388383cca4)
+
+## Bedrock APIのベクトル検索
+<img width="3366" height="754" alt="image" src="https://github.com/user-attachments/assets/d215475c-54fd-46d1-9021-fb9ce4a0202f" />
+<img width="3318" height="1270" alt="image" src="https://github.com/user-attachments/assets/b83989a2-8786-413e-9b1f-2266fb6204f6" />
+
 
 
 
